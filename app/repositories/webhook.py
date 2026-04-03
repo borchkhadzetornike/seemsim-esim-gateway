@@ -42,10 +42,27 @@ class WebhookRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def find_duplicate_by_hash(
+        self, payload_hash: str
+    ) -> ProviderWebhookEvent | None:
+        """True duplicate = exact same payload already processed successfully."""
+        if not payload_hash:
+            return None
+        stmt = (
+            select(ProviderWebhookEvent)
+            .where(
+                ProviderWebhookEvent.payload_hash == payload_hash,
+                ProviderWebhookEvent.processing_status == "processed",
+            )
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def find_processed_duplicate(
         self, order_no: str | None, event_type: str
     ) -> ProviderWebhookEvent | None:
-        """Check if a webhook with the same order_no + event_type was already processed."""
+        """Legacy compat — prefer find_duplicate_by_hash for actual dedup."""
         if not order_no:
             return None
         stmt = (

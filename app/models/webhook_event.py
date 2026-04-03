@@ -14,7 +14,13 @@ def _utc_now() -> datetime:
 
 
 class ProviderWebhookEvent(Base):
-    """Stores raw incoming webhook events for audit and replay protection."""
+    """Stores raw incoming webhook events for audit and replay protection.
+
+    Deduplication uses ``payload_hash`` (SHA-256 of the canonical JSON
+    payload), **not** ``(order_no, event_type)``.  This allows multiple
+    legitimate status-change webhooks for the same order while still
+    rejecting true duplicates (e.g. provider retry delivery).
+    """
 
     __tablename__ = "provider_webhook_events"
 
@@ -25,6 +31,7 @@ class ProviderWebhookEvent(Base):
     order_no: Mapped[str | None] = mapped_column(String(128), nullable=True)
     iccid: Mapped[str | None] = mapped_column(String(64), nullable=True)
     transaction_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    payload_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     payload: Mapped[dict] = mapped_column(JSONBCompat, nullable=False)
     processed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     processing_status: Mapped[str] = mapped_column(

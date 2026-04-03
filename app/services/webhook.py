@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
 from typing import Any
 
@@ -18,7 +20,23 @@ from app.services.state_sync import ProviderStateSyncer
 logger = structlog.get_logger(__name__)
 
 
+def _payload_hash(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
 class WebhookService:
+    """Processes incoming provider webhooks.
+
+    Deduplication strategy: hash the raw payload to detect exact
+    duplicate deliveries.  Different status updates for the same order
+    are *not* considered duplicates and are processed normally.
+
+    After applying any inline updates, every webhook with an order_no
+    triggers a full provider query refresh so the internal state is
+    always reconciled with the provider source of truth.
+    """
+
     def __init__(self, provider: BaseEsimProvider, session: AsyncSession) -> None:
         self._provider = provider
         self._webhook_repo = WebhookRepository(session)
@@ -28,6 +46,7 @@ class WebhookService:
 
     async def process_webhook(self, raw_payload: dict[str, Any]) -> str:
         normalized = await self._provider.handle_webhook(raw_payload)
+        p_hash = _payload_hash(raw_payload)
 
         event_id = str(uuid.uuid4())
         event = ProviderWebhookEvent(
@@ -37,22 +56,20 @@ class WebhookService:
             order_no=normalized.get("order_no"),
             iccid=normalized.get("iccid"),
             transaction_id=normalized.get("transaction_id"),
+            payload_hash=p_hash,
             payload=raw_payload,
             processed=False,
             processing_status="pending",
         )
         await self._webhook_repo.create(event)
 
-        # Check for duplicate: same order_no + event_type already processed
-        existing = await self._webhook_repo.find_processed_duplicate(
-            order_no=normalized.get("order_no"),
-            event_type=normalized.get("event_type", "UNKNOWN"),
-        )
+        existing = await self._webhook_repo.find_duplicate_by_hash(p_hash)
         if existing:
             logger.info(
-                "webhook_duplicate_detected",
+                "webhook_exact_duplicate_detected",
                 event_id=event_id,
                 existing_event_id=existing.id,
+                payload_hash=p_hash,
             )
             await self._webhook_repo.mark_processed(event_id)
             return event_id
@@ -61,6 +78,12 @@ class WebhookService:
             await self._handle_event(normalized)
             await self._trigger_provider_refresh(normalized)
             await self._webhook_repo.mark_processed(event_id)
+            logger.info(
+                "webhook_processed",
+                event_id=event_id,
+                event_type=normalized.get("event_type"),
+                order_no=normalized.get("order_no"),
+            )
         except Exception as exc:
             logger.error("webhook_processing_failed", event_id=event_id, error=str(exc))
             await self._webhook_repo.mark_processed(event_id, error=str(exc))
@@ -117,17 +140,23 @@ class WebhookService:
             return
 
         new_status = data.get("status", "completed")
-        order.status = new_status
+        old_status = order.status
+
+        terminal = frozenset({"consumed", "cancelled", "failed"})
+        if old_status not in terminal:
+            order.status = new_status
 
         iccid = data.get("iccid")
         if iccid and not order.iccid:
             order.iccid = iccid
 
         logger.info(
-            "webhook_order_updated",
+            "webhook_order_status_updated",
             order_id=order.id,
             order_no=order_no,
-            status=new_status,
+            old_status=old_status,
+            new_status=new_status,
+            applied=old_status not in terminal,
         )
 
     async def _handle_esim_status(self, data: dict[str, Any]) -> None:
