@@ -335,6 +335,14 @@ class EsimAccessProvider(BaseEsimProvider):
         The provider keeps esimStatus as GOT_RESOURCE even after the profile
         is downloaded/installed. The real lifecycle state comes from combining
         both fields per the eSIM Access webhook documentation.
+
+        smdpStatus semantics (SM-DP+ server states):
+          RELEASED     – profile available for download, customer hasn't touched it
+          DOWNLOAD     – device is downloading the profile
+          INSTALLATION – device is installing the profile
+          ENABLED      – profile is installed and active on device
+          DISABLED     – profile suspended
+          DELETED      – profile removed
         """
         esim_status = str(record.get("esimStatus", "unknown")).lower()
         smdp_status = str(record.get("smdpStatus", "")).upper()
@@ -344,10 +352,13 @@ class EsimAccessProvider(BaseEsimProvider):
         if smdp_status == "DISABLED":
             return "suspended"
 
-        if esim_status == "got_resource" and smdp_status in (
-            "RELEASED", "ENABLED", "DOWNLOAD", "INSTALLATION",
-        ):
-            return "installed"
+        if esim_status == "got_resource":
+            if smdp_status == "RELEASED":
+                return "ready"
+            if smdp_status in ("DOWNLOAD", "INSTALLATION"):
+                return "installing"
+            if smdp_status == "ENABLED":
+                return "installed"
 
         return esim_status
 
@@ -391,6 +402,8 @@ class EsimAccessProvider(BaseEsimProvider):
         effective = cls._effective_status(record)
         status_map = {
             "got_resource": "completed",
+            "ready": "completed",
+            "installing": "completed",
             "installed": "completed",
             "in_use": "active",
             "used_up": "expired",
