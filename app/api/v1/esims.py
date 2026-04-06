@@ -7,9 +7,29 @@ from fastapi import APIRouter
 from app.api.deps import EsimServiceDep, ProviderDep
 from app.core.auth import RequireEsimsRead
 from app.schemas.common import ApiResponse
-from app.schemas.esim import EsimOut, EsimStatusHistoryOut, EsimStatusOut, TopupPackageOut
+from app.schemas.esim import EsimOut, EsimPackageInfo, EsimStatusHistoryOut, EsimStatusOut, TopupPackageOut
 
 router = APIRouter(prefix="/esims", tags=["eSIMs"])
+
+
+def _build_package_list(raw_payload: dict | None) -> list[EsimPackageInfo]:
+    if not raw_payload:
+        return []
+    items = raw_payload.get("packageList") or []
+    return [
+        EsimPackageInfo(
+            package_code=p.get("packageCode", ""),
+            package_name=p.get("packageName"),
+            slug=p.get("slug"),
+            volume=p.get("volume"),
+            duration=p.get("duration"),
+            location_code=p.get("locationCode"),
+            esim_tran_no=p.get("esimTranNo"),
+            transaction_id=p.get("transactionId"),
+            created_at=p.get("createTime"),
+        )
+        for p in items
+    ]
 
 
 @router.get(
@@ -19,7 +39,9 @@ router = APIRouter(prefix="/esims", tags=["eSIMs"])
 )
 async def get_esim(esim_id: str, service: EsimServiceDep, _caller: RequireEsimsRead) -> ApiResponse[EsimOut]:
     esim = await service.get_esim(esim_id)
-    return ApiResponse(data=EsimOut.model_validate(esim))
+    out = EsimOut.model_validate(esim)
+    out.package_list = _build_package_list(esim.raw_provider_payload)
+    return ApiResponse(data=out)
 
 
 @router.get(

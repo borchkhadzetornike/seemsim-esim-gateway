@@ -5,6 +5,18 @@ from datetime import datetime
 from app.schemas.common import BaseSchema
 
 
+class EsimPackageInfo(BaseSchema):
+    package_code: str
+    package_name: str | None = None
+    slug: str | None = None
+    volume: int | None = None
+    duration: int | None = None
+    location_code: str | None = None
+    esim_tran_no: str | None = None
+    transaction_id: str | None = None
+    created_at: str | None = None
+
+
 class EsimOut(BaseSchema):
     id: str
     iccid: str
@@ -32,6 +44,7 @@ class EsimOut(BaseSchema):
     expired_time: datetime | None = None
     support_topup_type: int | None = None
     fup_policy: str | None = None
+    package_list: list[EsimPackageInfo] = []
     created_at: datetime
     updated_at: datetime
 
