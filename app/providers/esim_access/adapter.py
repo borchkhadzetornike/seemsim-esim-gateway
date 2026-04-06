@@ -384,6 +384,13 @@ class EsimAccessProvider(BaseEsimProvider):
         location = pkg.get("location", "")
         countries: list[str] = [c.strip() for c in location.split(",") if c.strip()] if location else []
 
+        topup_raw = pkg.get("supportTopUpType")
+        support_topup_type: int | None = None
+        if isinstance(topup_raw, int):
+            support_topup_type = topup_raw
+        elif isinstance(topup_raw, str) and topup_raw.isdigit():
+            support_topup_type = int(topup_raw)
+
         return ProviderPackageData(
             package_code=pkg.get("packageCode", ""),
             name=pkg.get("name", ""),
@@ -394,6 +401,7 @@ class EsimAccessProvider(BaseEsimProvider):
             currency=pkg.get("currencyCode", "USD"),
             countries=countries,
             location_code=pkg.get("locationCode"),
+            support_topup_type=support_topup_type,
             raw=pkg,
         )
 

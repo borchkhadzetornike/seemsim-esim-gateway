@@ -47,6 +47,7 @@ class ProviderPackage(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
     countries: Mapped[list[str] | None] = mapped_column(JSONBCompat, nullable=True)
+    support_topup_type: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     raw_provider_data: Mapped[dict | None] = mapped_column(JSONBCompat, nullable=True)
 

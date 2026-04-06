@@ -54,6 +54,7 @@ class CatalogService:
                 price=pkg_data.price,
                 currency=pkg_data.currency,
                 countries=pkg_data.countries,
+                support_topup_type=pkg_data.support_topup_type,
                 is_active=True,
                 raw_provider_data=pkg_data.raw,
             )

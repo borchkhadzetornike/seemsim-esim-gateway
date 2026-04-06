@@ -47,6 +47,7 @@ class ProductRepository:
             existing.price = package.price
             existing.currency = package.currency
             existing.countries = package.countries
+            existing.support_topup_type = package.support_topup_type
             existing.is_active = package.is_active
             existing.raw_provider_data = package.raw_provider_data
             return existing

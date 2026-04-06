@@ -16,6 +16,7 @@ class PackageOut(BaseSchema):
     price: float
     currency: str
     countries: list[str] | None = None
+    support_topup_type: int | None = None
     is_active: bool
 
 

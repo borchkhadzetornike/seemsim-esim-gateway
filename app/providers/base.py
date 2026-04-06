@@ -22,6 +22,7 @@ class ProviderPackageData:
     currency: str = "USD"
     countries: list[str] = field(default_factory=list)
     location_code: str | None = None
+    support_topup_type: int | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 
