@@ -187,6 +187,30 @@ class EsimAccessProvider(BaseEsimProvider):
         )
 
     # ------------------------------------------------------------------
+    # Top-up package discovery
+    # ------------------------------------------------------------------
+
+    async def get_topup_packages(self, iccid: str) -> list[ProviderPackageData]:
+        """Query the provider for top-up eligible packages for a specific eSIM."""
+        payload: dict[str, Any] = {
+            "type": "TOPUP",
+            "iccid": iccid,
+        }
+        data = await self._client.request(ENDPOINT_PACKAGE_LIST, payload)
+        obj = data.get("obj") or {}
+        packages_raw = obj.get("packageList", [])
+
+        if not isinstance(packages_raw, list):
+            packages_raw = []
+
+        result: list[ProviderPackageData] = []
+        for pkg in packages_raw:
+            result.append(self._map_package(pkg))
+
+        logger.info("topup_packages_fetched", iccid=iccid, count=len(result))
+        return result
+
+    # ------------------------------------------------------------------
     # Top-up (documented and verified)
     # ------------------------------------------------------------------
 

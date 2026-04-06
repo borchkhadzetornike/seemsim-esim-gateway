@@ -36,6 +36,16 @@ class EsimOut(BaseSchema):
     updated_at: datetime
 
 
+class TopupPackageOut(BaseSchema):
+    package_code: str
+    name: str
+    data_volume_mb: int | None = None
+    duration_days: int | None = None
+    price: float
+    currency: str
+    countries: list[str] = []
+
+
 class EsimStatusOut(BaseSchema):
     iccid: str
     status: str

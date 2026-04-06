@@ -107,6 +107,10 @@ class BaseEsimProvider(ABC):
     @abstractmethod
     async def suspend_esim(self, iccid: str) -> ProviderCancelResult: ...
 
+    async def get_topup_packages(self, iccid: str) -> list[ProviderPackageData]:
+        """Fetch top-up eligible packages for a given eSIM."""
+        return []
+
     async def get_balance(self) -> dict[str, Any]:
         """Return provider account balance. Override per provider."""
         from app.core.errors import ProviderCapabilityUnavailableError
