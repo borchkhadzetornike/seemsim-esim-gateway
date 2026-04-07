@@ -40,6 +40,8 @@ async def list_products(
             id=p.id,
             name=p.name,
             location_code=p.location_code,
+            package_type=p.package_type,
+            region_code=p.region_code,
             is_active=p.is_active,
             package_count=len(p.packages) if p.packages else 0,
         )

@@ -17,6 +17,8 @@ class ProviderProduct(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     location_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    package_type: Mapped[str] = mapped_column(String(20), nullable=False, default="local")
+    region_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     packages: Mapped[list[ProviderPackage]] = relationship(
@@ -26,6 +28,8 @@ class ProviderProduct(Base):
     __table_args__ = (
         Index("ix_provider_products_provider", "provider_name"),
         Index("ix_provider_products_location", "location_code"),
+        Index("ix_provider_products_type", "package_type"),
+        Index("ix_provider_products_region", "region_code"),
     )
 
 
@@ -48,6 +52,8 @@ class ProviderPackage(Base):
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
     countries: Mapped[list[str] | None] = mapped_column(JSONBCompat, nullable=True)
     support_topup_type: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    package_type: Mapped[str] = mapped_column(String(20), nullable=False, default="local")
+    region_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     raw_provider_data: Mapped[dict | None] = mapped_column(JSONBCompat, nullable=True)
 
@@ -57,4 +63,6 @@ class ProviderPackage(Base):
         Index("ix_provider_packages_product", "product_id"),
         Index("ix_provider_packages_code", "package_code"),
         Index("ix_provider_packages_type", "type"),
+        Index("ix_provider_packages_pkg_type", "package_type"),
+        Index("ix_provider_packages_region", "region_code"),
     )

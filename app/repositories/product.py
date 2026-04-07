@@ -27,6 +27,8 @@ class ProductRepository:
             existing.name = product.name
             existing.description = product.description
             existing.location_code = product.location_code
+            existing.package_type = product.package_type
+            existing.region_code = product.region_code
             existing.is_active = product.is_active
             return existing
         self._session.add(product)
@@ -48,6 +50,8 @@ class ProductRepository:
             existing.currency = package.currency
             existing.countries = package.countries
             existing.support_topup_type = package.support_topup_type
+            existing.package_type = package.package_type
+            existing.region_code = package.region_code
             existing.is_active = package.is_active
             existing.raw_provider_data = package.raw_provider_data
             return existing

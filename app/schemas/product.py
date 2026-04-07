@@ -17,6 +17,8 @@ class PackageOut(BaseSchema):
     currency: str
     countries: list[str] | None = None
     support_topup_type: int | None = None
+    package_type: str = "local"
+    region_code: str | None = None
     is_active: bool
 
 
@@ -25,6 +27,8 @@ class ProductOut(BaseSchema):
     name: str
     description: str | None = None
     location_code: str | None = None
+    package_type: str = "local"
+    region_code: str | None = None
     is_active: bool
     packages: list[PackageOut] = []
     created_at: datetime
@@ -35,6 +39,8 @@ class ProductListOut(BaseSchema):
     id: str
     name: str
     location_code: str | None = None
+    package_type: str = "local"
+    region_code: str | None = None
     is_active: bool
     package_count: int = 0
 
