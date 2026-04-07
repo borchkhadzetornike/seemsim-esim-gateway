@@ -1,4 +1,14 @@
-"""Country-to-continent mapping and region classification for eSIM packages."""
+"""Country-to-region mapping and classification for eSIM packages.
+
+Regions follow eSIM Access's multi-area plan grouping:
+  - Europe
+  - Americas (North + South America + Caribbean)
+  - Asia
+  - Africa
+  - Oceania
+  - Middle East
+  - Worldwide (packages spanning 3+ distinct regions)
+"""
 
 from __future__ import annotations
 
@@ -21,6 +31,28 @@ COUNTRY_TO_REGION: dict[str, str] = {
     "GG": "europe", "IM": "europe", "JE": "europe", "AX": "europe",
     "SJ": "europe",
 
+    # ── Americas (North + South America + Caribbean) ─────────────────
+    "AG": "americas", "BS": "americas", "BB": "americas",
+    "BZ": "americas", "CA": "americas", "CR": "americas",
+    "CU": "americas", "DM": "americas", "DO": "americas",
+    "SV": "americas", "GD": "americas", "GT": "americas",
+    "HT": "americas", "HN": "americas", "JM": "americas",
+    "MX": "americas", "NI": "americas", "PA": "americas",
+    "KN": "americas", "LC": "americas", "VC": "americas",
+    "TT": "americas", "US": "americas", "PR": "americas",
+    "VI": "americas", "GL": "americas", "BM": "americas",
+    "KY": "americas", "AW": "americas", "CW": "americas",
+    "SX": "americas", "BQ": "americas", "TC": "americas",
+    "VG": "americas", "AI": "americas", "MS": "americas",
+    "GP": "americas", "MQ": "americas", "BL": "americas",
+    "MF": "americas", "PM": "americas",
+    "AR": "americas", "BO": "americas", "BR": "americas",
+    "CL": "americas", "CO": "americas", "EC": "americas",
+    "FK": "americas", "GF": "americas", "GY": "americas",
+    "PY": "americas", "PE": "americas", "SR": "americas",
+    "UY": "americas", "VE": "americas",
+    "AN": "americas",
+
     # ── Asia ──────────────────────────────────────────────────────────
     "AF": "asia", "AM": "asia", "AZ": "asia", "BD": "asia",
     "BT": "asia", "BN": "asia", "KH": "asia", "CN": "asia",
@@ -31,29 +63,6 @@ COUNTRY_TO_REGION: dict[str, str] = {
     "PH": "asia", "SG": "asia", "KR": "asia", "LK": "asia",
     "TW": "asia", "TJ": "asia", "TH": "asia", "TL": "asia",
     "TM": "asia", "UZ": "asia", "VN": "asia",
-
-    # ── North America ────────────────────────────────────────────────
-    "AG": "north_america", "BS": "north_america", "BB": "north_america",
-    "BZ": "north_america", "CA": "north_america", "CR": "north_america",
-    "CU": "north_america", "DM": "north_america", "DO": "north_america",
-    "SV": "north_america", "GD": "north_america", "GT": "north_america",
-    "HT": "north_america", "HN": "north_america", "JM": "north_america",
-    "MX": "north_america", "NI": "north_america", "PA": "north_america",
-    "KN": "north_america", "LC": "north_america", "VC": "north_america",
-    "TT": "north_america", "US": "north_america", "PR": "north_america",
-    "VI": "north_america", "GL": "north_america", "BM": "north_america",
-    "KY": "north_america", "AW": "north_america", "CW": "north_america",
-    "SX": "north_america", "BQ": "north_america", "TC": "north_america",
-    "VG": "north_america", "AI": "north_america", "MS": "north_america",
-    "GP": "north_america", "MQ": "north_america", "BL": "north_america",
-    "MF": "north_america", "PM": "north_america",
-
-    # ── South America ────────────────────────────────────────────────
-    "AR": "south_america", "BO": "south_america", "BR": "south_america",
-    "CL": "south_america", "CO": "south_america", "EC": "south_america",
-    "FK": "south_america", "GF": "south_america", "GY": "south_america",
-    "PY": "south_america", "PE": "south_america", "SR": "south_america",
-    "UY": "south_america", "VE": "south_america",
 
     # ── Africa ────────────────────────────────────────────────────────
     "DZ": "africa", "AO": "africa", "BJ": "africa", "BW": "africa",
@@ -86,25 +95,15 @@ COUNTRY_TO_REGION: dict[str, str] = {
     "LB": "middle_east", "OM": "middle_east", "PS": "middle_east",
     "QA": "middle_east", "SA": "middle_east", "SY": "middle_east",
     "TR": "middle_east", "AE": "middle_east", "YE": "middle_east",
-
-    # ── Caribbean ─────────────────────────────────────────────────────
-    "AN": "caribbean", "HK": "caribbean",  # HK already mapped; kept for reference
 }
-
-# Override duplicate: HK → asia takes precedence (dict last-write wins above,
-# so fix by re-assigning after the initial block).
-COUNTRY_TO_REGION["HK"] = "asia"
-
 
 REGION_DISPLAY_NAMES: dict[str, str] = {
     "europe": "Europe",
+    "americas": "America & Canada",
     "asia": "Asia",
-    "north_america": "North America",
-    "south_america": "South America",
     "africa": "Africa",
     "oceania": "Oceania",
     "middle_east": "Middle East",
-    "caribbean": "Caribbean",
     "worldwide": "Worldwide",
 }
 
@@ -112,11 +111,10 @@ _MULTI_REGION_THRESHOLD = 3
 
 
 def classify_region(countries: list[str]) -> str:
-    """Determine the dominant region for a list of ISO-3166-1 alpha-2 country codes.
+    """Determine the dominant region for a list of country codes.
 
-    Returns the single region if all mapped countries fall within one region,
-    or "worldwide" when the package spans ``_MULTI_REGION_THRESHOLD`` or more
-    distinct regions.  For two distinct regions, returns the most common one.
+    Returns "worldwide" when the package spans 3+ distinct regions.
+    For two regions, returns the most common one.
     """
     if not countries:
         return "worldwide"
@@ -131,11 +129,9 @@ def classify_region(countries: list[str]) -> str:
 
     if distinct == 1:
         return regions[0]
-
     if distinct >= _MULTI_REGION_THRESHOLD:
         return "worldwide"
 
-    # Two distinct regions → return the dominant one
     return counts.most_common(1)[0][0]
 
 
